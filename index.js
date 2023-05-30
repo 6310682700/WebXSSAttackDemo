@@ -1,10 +1,10 @@
 const express = require('express')
-const { createReadStream } = require('fs')
 
 const bodyParser = require('body-parser')
 const cookieParser = require('cookie-parser')
 const { log } = require('console')
 const { randomBytes, secureHeapUsed } = require('crypto')
+const { dirname } = require('path')
 
 const USERS = {
     'alice': 'password',
@@ -20,15 +20,39 @@ app.use((req, res, next) => {
     res.set('X-XSS-Protection', '0')
     next()
 })
+app.set('view engine', 'ejs')
 
 app.get('/', (req, res) => {
     const username = SESSIONS[req.cookies.sessionId]
-    const source = req.query.source
+    const source = req.query.username
 
     if (username) {
+        // res.render('transfer.pug', {"balances": BALANCES[username], 'username': username});
         res.send(`
-            <h1>
-                Hi <span id='username'></span>.
+            <style>
+                h1{
+                    text-align: center;
+                    font-weight: 100px;
+                }
+                
+                input, select {
+                    width: 100%;
+                    padding: 12px 20px;
+                    margin: 8px 0;
+                    display: inline-block;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                }
+                
+                input[type=submit] {
+                    width: 100%;
+                    background-color: blue;
+                    color: white;
+                }
+            </style>
+            <h1>            
+                ${source ? `Hi ${source} welcome!<br>` : ''}
                 Your balance is $${BALANCES[username]}.
             </h1>
             <form method='POST' action='/transfer'>
@@ -39,8 +63,29 @@ app.get('/', (req, res) => {
         `)
     } else {
         res.send(`
-            <h1>
-                ${source ? `Hi ${source} reader!<br>` : ''}
+            <style>
+                h1{
+                    text-align: center;
+                    font-weight: 100px;
+                }
+                
+                input, select {
+                    width: 100%;
+                    padding: 12px 20px;
+                    margin: 8px 0;
+                    display: inline-block;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                }
+                
+                input[type=submit] {
+                    width: 100%;
+                    background-color: blue;
+                    color: white;
+                }
+            </style>
+            <h1>                
                 Login to your bank account:
             </h1>
             <form method='post' action='/login'>
@@ -49,9 +94,10 @@ app.get('/', (req, res) => {
                 <input type='submit' value='Login' />
             </form>
         `)
+    };
     }
 
-})
+)
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body
